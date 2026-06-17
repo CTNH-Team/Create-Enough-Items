@@ -1,0 +1,5 @@
+{
+  "cei.emi.collapsible.button.collapse_all": "左键：折叠全部（%s 个分组）",
+  "cei.emi.collapsible.button.collapse_all.right_click": "右键：折叠全部",
+  "cei.emi.collapsible.button.expand_all": "左键：展开全部（%s 个已折叠）"
+}

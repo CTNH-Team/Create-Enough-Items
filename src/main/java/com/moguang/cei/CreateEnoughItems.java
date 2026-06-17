@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 public class CreateEnoughItems {
 
     public static final String MODID = "cei";
-    private static final Logger LOGGER = LogUtils.getLogger();
+    public static final Logger LOGGER = LogUtils.getLogger();
     public static final CEIRegistrate REGISTRATE = CEIRegistrate.create();
 
     public CreateEnoughItems() {

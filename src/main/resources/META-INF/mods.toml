@@ -72,3 +72,10 @@ description='''${mod_description}'''
     versionRange="[1.6,)"
     ordering="AFTER"
     side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="emi"
+    mandatory=true
+    versionRange="[1.1,)"
+    ordering="AFTER"
+    side="CLIENT"

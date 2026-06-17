@@ -1,0 +1,5 @@
+{
+  "cei.emi.collapsible.button.collapse_all": "Left click: collapse all (%s groups)",
+  "cei.emi.collapsible.button.collapse_all.right_click": "Right click: collapse all",
+  "cei.emi.collapsible.button.expand_all": "Left click: expand all (%s collapsed)"
+}
