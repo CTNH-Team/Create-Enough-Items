@@ -11,8 +11,5 @@ public class ClientProxy extends CommonProxy {
 
     public ClientProxy() {
         super();
-        init();
     }
-
-    public static void init() {}
 }
