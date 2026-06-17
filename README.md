@@ -1,11 +1,14 @@
-# CTNH-Template
+# Create-Enough-Items
 
-Core mod of the xxx part for the modpack Create: New Horizon (CTNH).
+Mod of the items & EMI part for the modpack Create: New Horizon (CTNH).
 
 ## Building
 
 This mod should be built under [CTNH-Team/CTNH-Modules](https://github.com/CTNH-Team/CTNH-Modules) repository using Gradle.
 
+```bash
+./gradlew :modules:Create-Enough-Items:build
+```
 
 ## License
 
