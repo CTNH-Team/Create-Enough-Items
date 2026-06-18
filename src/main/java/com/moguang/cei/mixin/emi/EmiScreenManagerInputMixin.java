@@ -12,9 +12,11 @@ import com.moguang.cei.utils.emi.featured.CEIFeaturedRecipeScreen;
 import com.moguang.cei.utils.emi.featured.CEIFeaturedRecipes;
 import com.moguang.cei.utils.emi.search.CEIAssociatedSearch;
 import com.moguang.cei.utils.emi.search.CEIAssociatedSearchRecipeScreen;
+import com.moguang.cei.utils.emi.search.CEIEmiDragSearchFill;
 import com.moguang.cei.utils.emi.voltage.CEIVoltageRecipeFilter;
 import com.moguang.cei.utils.emi.voltage.CEIVoltageRecipeScreen;
 import dev.emi.emi.api.stack.EmiIngredient;
+import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.stack.EmiStackInteraction;
 import dev.emi.emi.config.SidebarType;
 import dev.emi.emi.runtime.EmiDrawContext;
@@ -85,6 +87,20 @@ public class EmiScreenManagerInputMixin {
 
     @Unique
     private static final int VOLTAGE_BUTTON_HEIGHT = 16;
+
+    /** 把从 EMI 侧栏拖出的物品名填入落点处的搜索框。 */
+    @Inject(method = "mouseReleased", at = @At("HEAD"), cancellable = true)
+    private static void cei$dropDraggedStackNameIntoSearch(double mouseX, double mouseY, int button,
+                                                           CallbackInfoReturnable<Boolean> cir) {
+        if (button != 0 || EmiScreenManager.draggedStack.isEmpty()) return;
+
+        Screen screen = Minecraft.getInstance().screen;
+        if (CEIEmiDragSearchFill.dropNameIntoHoveredTextField(screen, EmiScreenManager.draggedStack,
+                (int) mouseX, (int) mouseY)) {
+            EmiScreenManager.draggedStack = EmiStack.EMPTY;
+            cir.setReturnValue(true);
+        }
+    }
 
     /** 处理 G 按钮点击，以及 Alt + 左键切换单个分组。 */
     @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
