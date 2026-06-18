@@ -1,5 +1,16 @@
 {
   "cei.emi.collapsible.button.collapse_all": "左键：折叠全部（%s 个分组）",
   "cei.emi.collapsible.button.collapse_all.right_click": "右键：折叠全部",
-  "cei.emi.collapsible.button.expand_all": "左键：展开全部（%s 个已折叠）"
+  "cei.emi.collapsible.button.expand_all": "左键：展开全部（%s 个已折叠）",
+  "cei.emi.recycling_recipes.button.visible": "回收配方",
+  "cei.emi.recycling_recipes.button.hidden": "回收配方",
+  "cei.emi.recycling_recipes.tooltip.visible": "当前显示回收配方，点击后隐藏回收配方",
+  "cei.emi.recycling_recipes.tooltip.hidden": "当前隐藏回收配方，点击后显示回收配方",
+  "cei.emi.duplicate_recipes.button.visible": "重复配方",
+  "cei.emi.duplicate_recipes.button.hidden": "重复配方",
+  "cei.emi.duplicate_recipes.tooltip.visible": "当前显示重复配方，点击后隐藏机械动力衍生的配方",
+  "cei.emi.duplicate_recipes.tooltip.hidden": "当前隐藏重复配方，点击后显示机械动力衍生的配方",
+  "cei.emi.associated_search.button": "关联搜索",
+  "cei.emi.associated_search.tooltip.enabled": "关联搜索已开启，点击后只显示当前物品配方",
+  "cei.emi.associated_search.tooltip.disabled": "关联搜索已关闭，点击后显示关联物品和流体配方"
 }

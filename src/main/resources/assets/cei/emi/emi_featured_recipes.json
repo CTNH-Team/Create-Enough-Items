@@ -1,0 +1,11 @@
+{
+  "cei:gtceu/macerator_recycling": {
+    "key": "category:gtceu:macerator_recycling"
+  },
+  "cei:gtceu/arc_furnace_recycling": {
+    "key": "category:gtceu:arc_furnace_recycling"
+  },
+  "cei:gtceu/extractor_recycling": {
+    "key": "category:gtceu:extractor_recycling"
+  }
+}

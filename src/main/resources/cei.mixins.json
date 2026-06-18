@@ -7,9 +7,13 @@
     "LevelMixin"
   ],
   "client": [
+    "emi.EmiApiTagExpandMixin",
+    "emi.EmiRecipesMixin",
     "emi.EmiScreenManagerInputMixin",
     "emi.EmiScreenManagerScreenSpaceMixin",
-    "emi.EmiSearchMixin"
+    "emi.EmiSearchMixin",
+    "emi.accessor.GTEmiRecipeAccessor",
+    "emi.RecipeScreenMixin"
   ],
   "minVersion": "0.8"
 }
