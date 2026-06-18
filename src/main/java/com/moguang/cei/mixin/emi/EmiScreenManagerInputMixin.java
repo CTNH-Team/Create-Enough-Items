@@ -172,6 +172,7 @@ public class EmiScreenManagerInputMixin {
         cei$renderAssociatedSearchButton(context.raw(), mouseX, mouseY);
         cei$renderDuplicateRecipeButton(context.raw(), mouseX, mouseY);
         cei$renderVoltageRecipeButtons(context.raw(), mouseX, mouseY);
+        CEIEmiDragSearchFill.renderSearchFieldHighlights(context.raw());
 
         if (CEICollapsibleGroups.needsRebuild()) return;
         if (!CEICollapsibleGroups.hasGroups()) {
