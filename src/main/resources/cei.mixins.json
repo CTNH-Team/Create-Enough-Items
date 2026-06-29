@@ -5,9 +5,11 @@
   "refmap": "mixins.cei.refmap.json",
   "mixins": [
     "accessor.EditBoxAccessor",
-    "tmrv.RecipeManagerMixin",
     "create.CreateJEIMixin",
-    "create.CreateJEIMixin$CategoryBuilderMixin"
+    "create.CreateJEIMixin$CategoryBuilderMixin",
+    "emi.EmiScreenManagerMixin",
+    "emi.EmiTagsMixin",
+    "tmrv.RecipeManagerMixin"
   ],
   "client": [
     "emi.EmiApiTagExpandMixin",
