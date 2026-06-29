@@ -5,7 +5,9 @@
   "refmap": "mixins.cei.refmap.json",
   "mixins": [
     "accessor.EditBoxAccessor",
-    "LevelMixin"
+    "tmrv.RecipeManagerMixin",
+    "create.CreateJEIMixin",
+    "create.CreateJEIMixin$CategoryBuilderMixin"
   ],
   "client": [
     "emi.EmiApiTagExpandMixin",
@@ -13,8 +15,8 @@
     "emi.EmiScreenManagerInputMixin",
     "emi.EmiScreenManagerScreenSpaceMixin",
     "emi.EmiSearchMixin",
-    "emi.accessor.GTEmiRecipeAccessor",
-    "emi.RecipeScreenMixin"
+    "emi.RecipeScreenMixin",
+    "emi.accessor.GTEmiRecipeAccessor"
   ],
   "minVersion": "0.8"
 }
