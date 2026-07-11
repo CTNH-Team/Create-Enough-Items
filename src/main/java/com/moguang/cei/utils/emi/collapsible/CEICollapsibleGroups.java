@@ -1,5 +1,7 @@
 package com.moguang.cei.utils.emi.collapsible;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectAVLTreeMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
@@ -19,7 +21,10 @@ import com.google.gson.JsonParser;
 import com.moguang.cei.CreateEnoughItems;
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import tech.vixhentx.mcmod.ctnhlib.utils.ChunkList;
+import tech.vixhentx.mcmod.ctnhlib.utils.LockIdentityHashMap;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,6 +35,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -54,7 +63,11 @@ public class CEICollapsibleGroups {
     private static final Map<String, CollapsibleGroup> GROUPS = Collections.synchronizedMap(new LinkedHashMap<>());
 
     /** EMI ingredient 对象身份 -> 分组 guid。这里依赖 EMI 当前侧栏列表中的对象身份。 */
-    private static final Map<EmiIngredient, String> STACK_TO_GROUP = new IdentityHashMap<>();
+    private static final Map<EmiIngredient, String> STACK_TO_GROUP = new LockIdentityHashMap<>();
+    private static final Map<String, EmiIngredient> ICON_BUF = new Object2ObjectAVLTreeMap<>();
+    private static final ReadWriteLock ICON_BUF_LOCK = new ReentrantReadWriteLock();
+    private static final Set<String> ICON_NOT = ConcurrentHashMap.newKeySet();
+    private static volatile Set<String> toggles = ConcurrentHashMap.newKeySet();
 
     /** 分组 guid -> 是否展开。没有记录时默认视为折叠。 */
     private static final Map<String, Boolean> EXPANDED_STATE = new HashMap<>();
@@ -65,11 +78,22 @@ public class CEICollapsibleGroups {
     /** 当前投影列表中的折叠代表项 -> 背景代表项。 */
     private static final IdentityHashMap<EmiIngredient, EmiIngredient> REPRESENTATIVE_TO_SECONDARY = new IdentityHashMap<>();
 
+    /** toggleAll 操作的目标展开状态，null 表示非全部切换操作。 */
+    private static volatile Boolean toggleAllTarget = null;
+
+    /** 标记正在进行 toggleAll 操作。 */
+    private static volatile boolean pendingToggleAll = false;
+
+    /** 修改最终结果+1 */
+
     /** 从 JSON 读取并编译后的分组规则。 */
     private static List<RuleGroupDefinition> configuredRules = List.of();
 
     /** 防止每次重建都重复读取规则文件。 */
     private static boolean rulesLoaded = false;
+
+    /** 修改最终结果+1 */
+    public static final AtomicInteger reloadState = new AtomicInteger();
 
     /** 一个已匹配完成的折叠组。 */
     public static class CollapsibleGroup {
@@ -121,6 +145,13 @@ public class CEICollapsibleGroups {
             loadStates();
             GROUPS.clear();
             STACK_TO_GROUP.clear();
+            ICON_BUF_LOCK.writeLock().lock();
+            try{
+                ICON_BUF.clear();
+            }finally {
+                ICON_BUF_LOCK.writeLock().unlock();
+            }
+            ICON_NOT.clear();
             REPRESENTATIVE_TO_GROUP.clear();
             REPRESENTATIVE_TO_SECONDARY.clear();
             if (stacks == null || stacks.isEmpty()) {
@@ -161,6 +192,7 @@ public class CEICollapsibleGroups {
     /** 少于两个成员的组没有折叠价值，直接丢弃。 */
     private static void registerGroup(CollapsibleGroup group) {
         if (group.members.size() < 2) return;
+        ICON_NOT.add(group.guid);
 
         GROUPS.put(group.guid, group);
         for (EmiIngredient member : group.members) {
@@ -168,65 +200,190 @@ public class CEICollapsibleGroups {
         }
     }
 
-    /** 把 EMI 当前列表转换为实际显示列表：展开组显示成员，折叠组按当前搜索结果折叠。 */
-    public static List<? extends EmiIngredient> project(List<? extends EmiIngredient> source) {
+    /** 在修改表找他下（{@link CEICollapsibleGroups。reloadState)）复用老結果可以解决完全释放cpu内存问题 */
+    public static void projectReload(List<? extends EmiIngredient> source, ProjectResult result) {
+
         if (dirty || GROUPS.isEmpty()) {
-            return source;
+            result.list = source;
+            result.groupBuf = null;
         }
         synchronized (GROUPS) {
-            List<EmiIngredient> result = new ArrayList<>();
-            Set<String> projectedGroups = new HashSet<>();
-            Map<String, List<EmiIngredient>> visibleMembers = visibleMembersByGroup(source);
+            if (result.list instanceof ChunkList cl && result.groupBuf != null) {
+                var g = result.groupBuf;
+                Set<String> toggles1;
+                synchronized (toggles) {
+                    toggles1 = toggles;
+                    toggles = ConcurrentHashMap.newKeySet();
+                }
+
+                int pos = 0;
+                GroupBuf buf = g;
+                while (buf != null) {
+                    pos += buf.offset;
+
+                    if (toggles1.remove(buf.key)) {
+                        CollapsibleGroup collapsibleGroup = GROUPS.get(buf.key);
+                        if (buf.expanded != collapsibleGroup.isExpanded()) {
+                            buf.expanded = !buf.expanded;
+                            if (buf.expanded) {
+                                // 折叠→展开：先移除代表项，再添加所有成员，并清除代表项映射
+                                EmiIngredient representative = (EmiIngredient)cl.get(pos);
+                                cl.removeRange(pos, pos + 1);
+                                cl.addAll(pos, buf.members);
+                                REPRESENTATIVE_TO_GROUP.remove(representative);
+                                REPRESENTATIVE_TO_SECONDARY.remove(representative);
+                            } else {
+                                // 展开→折叠：先移除所有成员，再插入代表项，并设置代表项映射
+                                cl.removeRange(pos, pos + buf.size);
+                                EmiIngredient representative = buf.members.get(0);
+                                cl.add(pos, representative);
+                                EmiIngredient visible = ICON_BUF.get(buf.key);
+                                if (visible != null) {
+                                    REPRESENTATIVE_TO_GROUP.put(representative, buf.key);
+                                    REPRESENTATIVE_TO_SECONDARY.put(representative, visible);
+                                }
+                            }
+                        }
+                    }
+                    if (buf.expanded) pos += buf.size; else pos += 1;
+                    buf = buf.next;
+                }
+            }else{
+                var pr = project(source);
+                result.list = pr.list;
+                result.groupBuf = pr.groupBuf;
+            }
+        }
+
+    }
+    /** 把 EMI 当前列表转换为实际显示列表：展开组显示成员，折叠组按当前搜索结果折叠。同时构建 GroupBuf 链表记录折叠组位置信息。 */
+    public static ProjectResult project(List<? extends EmiIngredient> source) {
+        if (dirty || GROUPS.isEmpty()) {
+            return new ProjectResult(source, null);
+        }
+        synchronized (GROUPS) {
+            List<EmiIngredient> result = new ChunkList<>(source.size());
+            Set<String> projectedGroups = new HashSet<>(source.size());
+            if (!ICON_NOT.isEmpty())visibleMembersByGroup(source);
             Set<EmiIngredient> sourceStacks = Collections.newSetFromMap(new IdentityHashMap<>());
             sourceStacks.addAll(source);
             REPRESENTATIVE_TO_GROUP.clear();
             REPRESENTATIVE_TO_SECONDARY.clear();
 
+            GroupBuf head = null;
+            GroupBuf tail = null;
+            int prevGroupPos = 0;
+            boolean prevExpanded = false;
+            int prevSize = 0;
+            int resultIndex = 0;
+
             for (EmiIngredient stack : source) {
-                String guid = STACK_TO_GROUP.get(stack);
+
+                var guid = STACK_TO_GROUP.get(stack);
                 if (guid == null) {
                     result.add(stack);
+                    resultIndex++;
                     continue;
                 }
                 CollapsibleGroup group = GROUPS.get(guid);
                 if (group == null) {
                     result.add(stack);
+                    resultIndex++;
                     continue;
                 }
                 if (group.members.size() < 2) {
                     result.add(stack);
+                    resultIndex++;
                 } else if (group.isExpanded()) {
                     if (projectedGroups.add(guid)) {
+                        int groupPos = resultIndex;
+                        int offset = head == null ? groupPos : groupPos - (prevExpanded ? prevGroupPos + prevSize : prevGroupPos + 1);
+
+                        List<EmiIngredient> visibleMembers = new ArrayList<>(group.members.size());
                         for (EmiIngredient member : group.members) {
                             if (sourceStacks.contains(member)) {
                                 result.add(member);
+                                visibleMembers.add(member);
+                                resultIndex++;
                             }
                         }
+
+                        GroupBuf buf = new GroupBuf();
+                        buf.expanded = true;
+                        buf.offset = offset;
+                        buf.size = visibleMembers.size();
+                        buf.members = visibleMembers;
+                        buf.key = guid;
+
+                        if (head == null) head = buf;
+                        else tail.next = buf;
+                        tail = buf;
+                        prevGroupPos = groupPos;
+                        prevExpanded = true;
+                        prevSize = visibleMembers.size();
                     }
                 } else {
                     if (projectedGroups.add(guid)) {
-                        List<EmiIngredient> visible = visibleMembers.getOrDefault(guid, List.of());
-                        if (visible.size() > 1) {
+                        int groupPos = resultIndex;
+                        int offset = head == null ? groupPos : groupPos - (prevExpanded ? prevGroupPos + prevSize : prevGroupPos + 1);
+
+                        EmiIngredient visible = ICON_BUF.get(guid);
+                        if (visible != null) {
                             REPRESENTATIVE_TO_GROUP.put(stack, guid);
-                            REPRESENTATIVE_TO_SECONDARY.put(stack, visible.get(1));
+                            REPRESENTATIVE_TO_SECONDARY.put(stack, visible);
                         }
                         result.add(stack);
+                        resultIndex++;
+
+                        List<EmiIngredient> visibleMembers = new ArrayList<>();
+                        for (EmiIngredient member : group.members) {
+                            if (sourceStacks.contains(member)) {
+                                visibleMembers.add(member);
+                            }
+                        }
+
+                        GroupBuf buf = new GroupBuf();
+                        buf.expanded = false;
+                        buf.offset = offset;
+                        buf.size = visibleMembers.size();
+                        buf.members = visibleMembers;
+                        buf.key = guid;
+
+                        if (head == null) head = buf;
+                        else tail.next = buf;
+                        tail = buf;
+                        prevGroupPos = groupPos;
+                        prevExpanded = false;
+                        prevSize = visibleMembers.size();
                     }
                 }
             }
-            return result;
+            return new ProjectResult(result, head);
         }
     }
 
-    private static Map<String, List<EmiIngredient>> visibleMembersByGroup(List<? extends EmiIngredient> source) {
-        Map<String, List<EmiIngredient>> visibleMembers = new HashMap<>();
-        for (EmiIngredient stack : source) {
-            String guid = STACK_TO_GROUP.get(stack);
-            if (guid != null) {
-                visibleMembers.computeIfAbsent(guid, ignored -> new ArrayList<>()).add(stack);
+    private synchronized static void visibleMembersByGroup(List<? extends EmiIngredient> source) {
+        ICON_BUF_LOCK.readLock().lock();
+        try{
+            int size = ICON_NOT.size();
+            Set<String> contains = new HashSet<>();
+            for (EmiIngredient stack : source) {
+                var guid = STACK_TO_GROUP.get(stack);
+                if (guid != null && ICON_NOT.contains(guid)) {
+                    if (contains.add(guid)) {
+                        continue;
+                    }
+                    ICON_NOT.remove(guid);
+                    ICON_BUF.put(guid, stack);
+                    size--;
+                    if (size == 0) {
+                        return;
+                    }
+                }
             }
+        }finally {
+            ICON_BUF_LOCK.readLock().unlock();
         }
-        return visibleMembers;
     }
 
     /** 查询普通成员或折叠代表项所属的组。 */
@@ -252,6 +409,9 @@ public class CEICollapsibleGroups {
     private static void toggleGroup(String guid) {
         CollapsibleGroup group = GROUPS.get(guid);
         if (group != null) {
+            synchronized (toggles){
+                toggles.add(guid);
+            }
             group.setExpanded(!group.isExpanded());
         }
     }
@@ -540,11 +700,14 @@ public class CEICollapsibleGroups {
      */
     public static void toggleAll(boolean forceCollapse) {
         boolean anyCollapsed = false;
+        List<String> allGuids = new ArrayList<>();
         synchronized (GROUPS) {
             for (CollapsibleGroup group : GROUPS.values()) {
                 if (group.members.size() >= 2 && !group.isExpanded()) {
                     anyCollapsed = true;
-                    break;
+                }
+                if (group.members.size() >= 2) {
+                    allGuids.add(group.guid);
                 }
             }
             boolean expand = !forceCollapse && anyCollapsed;
@@ -553,6 +716,9 @@ public class CEICollapsibleGroups {
                     group.setExpanded(expand);
                 }
             }
+        }
+        synchronized (toggles) {
+            toggles.addAll(allGuids);
         }
     }
 
@@ -693,6 +859,43 @@ public class CEICollapsibleGroups {
         public boolean matches(ItemStack stack) {
             int damage = stack.getDamageValue();
             return damage >= min && damage <= max;
+        }
+    }
+
+    public static final class GroupBuf{
+
+        public boolean expanded;//展开
+        public int offset, size;//偏移量是这个到写一个折叠位置有多大距离，size是当前有多少个EmiIngredient可折叠
+        public List<EmiIngredient> members;
+        public String key;
+        public GroupBuf next;
+
+        public int pos(String key){
+            int pos = 0;
+            GroupBuf buf = this;
+            while (buf != null) {
+                pos += buf.offset;
+                if (Objects.equals(buf.key, key)) return pos;
+                if (buf.expanded) pos += buf.size; else pos += 1;
+                buf = buf.next;
+            }
+            return -1;
+        }
+
+
+
+
+    }
+
+    /** project 方法的输出格式，同时包含投影列表和折叠组位置链表。 */
+    public static final class ProjectResult {
+        public List<? extends EmiIngredient> list;
+        @Nullable
+        public GroupBuf groupBuf;
+
+        public ProjectResult(List<? extends EmiIngredient> list, @Nullable GroupBuf groupBuf) {
+            this.list = list;
+            this.groupBuf = groupBuf;
         }
     }
 }

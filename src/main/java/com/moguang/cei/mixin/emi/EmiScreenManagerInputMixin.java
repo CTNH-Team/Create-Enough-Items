@@ -137,6 +137,7 @@ public class EmiScreenManagerInputMixin {
             } else if (button == 1) {
                 CEICollapsibleGroups.toggleAll(true);
             }
+            CEICollapsibleGroups.reloadState.incrementAndGet();
             EmiScreenManager.repopulatePanels(SidebarType.INDEX);
             cir.setReturnValue(true);
             return;
@@ -147,6 +148,7 @@ public class EmiScreenManagerInputMixin {
             EmiIngredient hovered = interaction.getStack();
             if (!hovered.isEmpty()) {
                 if (CEICollapsibleGroups.toggleGroup(hovered)) {
+                    CEICollapsibleGroups.reloadState.set(-1);
                     EmiScreenManager.repopulatePanels(SidebarType.INDEX);
                     cir.setReturnValue(true);
                 }

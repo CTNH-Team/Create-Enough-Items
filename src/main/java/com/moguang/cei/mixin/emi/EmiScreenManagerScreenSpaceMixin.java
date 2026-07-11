@@ -82,15 +82,38 @@ public abstract class EmiScreenManagerScreenSpaceMixin {
 
     @Unique
     private static final int COLLAPSED_FRONT_Y_OFFSET = 2;
+    @Unique
+    private static final Object NULLOBJ = new Object();
+    
+    @Unique
+    private volatile Object OldStacks = NULLOBJ;
+    @Unique
+    private volatile CEICollapsibleGroups.ProjectResult projectGetStacksBuf = null;
 
     /** 只在 INDEX 侧栏把 EMI 原列表替换为折叠投影。 */
     @Inject(method = "getStacks", at = @At("RETURN"), cancellable = true)
     private void cei$projectGetStacks(CallbackInfoReturnable<List<? extends EmiIngredient>> cir) {
         if (search && getType() == SidebarType.INDEX) {
             List<? extends EmiIngredient> original = cir.getReturnValue();
-            if (original == null || original.isEmpty()) return;
+            if (original == null || original.isEmpty()) {
+                OldStacks = NULLOBJ;
+                projectGetStacksBuf = null;
+                return;
+            }
             if (!CEICollapsibleGroups.needsRebuild() && CEICollapsibleGroups.hasGroups()) {
-                cir.setReturnValue(CEICollapsibleGroups.project(original));
+                synchronized (this) {
+                    var i = CEICollapsibleGroups.reloadState.get();
+                    if (OldStacks != original || i > 0 || i == -1) {
+                        CEICollapsibleGroups.reloadState.set(0);
+                        if (i > 0 && OldStacks == original){
+                            CEICollapsibleGroups.projectReload(original, projectGetStacksBuf);
+                        }else{
+                            OldStacks = original;
+                            projectGetStacksBuf = CEICollapsibleGroups.project(original);
+                        }
+                    }
+                    cir.setReturnValue(projectGetStacksBuf.list);
+                }
             }
         }
     }
