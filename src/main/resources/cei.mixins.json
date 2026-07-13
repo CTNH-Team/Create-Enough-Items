@@ -4,21 +4,21 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "mixins.cei.refmap.json",
   "mixins": [
-    "accessor.EditBoxAccessor",
-    "create.CreateJEIMixin",
+    "com.ctnh.cei.mixin.accessor.EditBoxAccessor",
+    "com.ctnh.cei.mixin.create.CreateJEIMixin",
     "create.CreateJEIMixin$CategoryBuilderMixin",
-    "emi.EmiScreenManagerMixin",
-    "emi.EmiTagsMixin",
-    "tmrv.RecipeManagerMixin"
+    "com.ctnh.cei.mixin.emi.EmiScreenManagerMixin",
+    "com.ctnh.cei.mixin.emi.EmiTagsMixin",
+    "com.ctnh.cei.mixin.tmrv.RecipeManagerMixin"
   ],
   "client": [
-    "emi.EmiApiTagExpandMixin",
-    "emi.EmiRecipesMixin",
-    "emi.EmiScreenManagerInputMixin",
-    "emi.EmiScreenManagerScreenSpaceMixin",
-    "emi.EmiSearchMixin",
-    "emi.RecipeScreenMixin",
-    "emi.accessor.GTEmiRecipeAccessor"
+    "com.ctnh.cei.mixin.emi.EmiApiTagExpandMixin",
+    "com.ctnh.cei.mixin.emi.EmiRecipesMixin",
+    "com.ctnh.cei.mixin.emi.EmiScreenManagerInputMixin",
+    "com.ctnh.cei.mixin.emi.EmiScreenManagerScreenSpaceMixin",
+    "com.ctnh.cei.mixin.emi.EmiSearchMixin",
+    "com.ctnh.cei.mixin.emi.RecipeScreenMixin",
+    "com.ctnh.cei.mixin.emi.accessor.GTEmiRecipeAccessor"
   ],
   "minVersion": "0.8"
 }
