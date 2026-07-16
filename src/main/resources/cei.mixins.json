@@ -1,24 +1,24 @@
 {
   "required": true,
-  "package": "com.moguang.cei.mixin",
+  "package": "com.ctnh.cei.mixin",
   "compatibilityLevel": "JAVA_17",
   "refmap": "mixins.cei.refmap.json",
   "mixins": [
-    "com.ctnh.cei.mixin.accessor.EditBoxAccessor",
-    "com.ctnh.cei.mixin.create.CreateJEIMixin",
+    "accessor.EditBoxAccessor",
+    "create.CreateJEIMixin",
     "create.CreateJEIMixin$CategoryBuilderMixin",
-    "com.ctnh.cei.mixin.emi.EmiScreenManagerMixin",
-    "com.ctnh.cei.mixin.emi.EmiTagsMixin",
-    "com.ctnh.cei.mixin.tmrv.RecipeManagerMixin"
+    "emi.EmiScreenManagerMixin",
+    "emi.EmiTagsMixin",
+    "tmrv.RecipeManagerMixin"
   ],
   "client": [
-    "com.ctnh.cei.mixin.emi.EmiApiTagExpandMixin",
-    "com.ctnh.cei.mixin.emi.EmiRecipesMixin",
-    "com.ctnh.cei.mixin.emi.EmiScreenManagerInputMixin",
-    "com.ctnh.cei.mixin.emi.EmiScreenManagerScreenSpaceMixin",
-    "com.ctnh.cei.mixin.emi.EmiSearchMixin",
-    "com.ctnh.cei.mixin.emi.RecipeScreenMixin",
-    "com.ctnh.cei.mixin.emi.accessor.GTEmiRecipeAccessor"
+    "emi.EmiApiTagExpandMixin",
+    "emi.EmiRecipesMixin",
+    "emi.EmiScreenManagerInputMixin",
+    "emi.EmiScreenManagerScreenSpaceMixin",
+    "emi.EmiSearchMixin",
+    "emi.RecipeScreenMixin",
+    "emi.accessor.GTEmiRecipeAccessor"
   ],
   "minVersion": "0.8"
 }
