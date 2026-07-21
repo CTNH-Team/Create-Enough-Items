@@ -5,12 +5,12 @@ import com.gregtechceu.gtceu.integration.emi.recipe.GTEmiRecipe;
 
 import net.minecraftforge.fml.loading.FMLPaths;
 
+import com.ctnh.cei.CreateEnoughItems;
+import com.ctnh.cei.mixin.emi.accessor.GTEmiRecipeAccessor;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.ctnh.cei.CreateEnoughItems;
-import com.ctnh.cei.mixin.emi.accessor.GTEmiRecipeAccessor;
 import dev.emi.emi.api.recipe.EmiRecipe;
 import dev.emi.emi.api.recipe.EmiRecipeCategory;
 
@@ -31,7 +31,7 @@ public class CEIVoltageRecipeFilter {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path STATE_FILE = FMLPaths.CONFIGDIR.get().resolve("cei/voltage_emi_recipes.json");
 
-    private static int minTier = GTValues.LV;
+    private static int minTier = GTValues.ULV;
     private static int maxTier = GTValues.MAX;
     private static boolean stateLoaded = false;
 
@@ -112,15 +112,15 @@ public class CEIVoltageRecipeFilter {
     }
 
     private static int clampTier(int tier) {
-        if (tier < GTValues.LV) return GTValues.LV;
+        if (tier < GTValues.ULV) return GTValues.ULV;
         if (tier > GTValues.MAX) return GTValues.MAX;
         return tier;
     }
 
     private static int cycleTier(int tier, int delta) {
         int next = clampTier(tier) + delta;
-        if (next < GTValues.LV) return GTValues.MAX;
-        if (next > GTValues.MAX) return GTValues.LV;
+        if (next < GTValues.ULV) return GTValues.MAX;
+        if (next > GTValues.MAX) return GTValues.ULV;
         return next;
     }
 
@@ -129,7 +129,7 @@ public class CEIVoltageRecipeFilter {
         if (normalized >= 0 && normalized < GTValues.VN.length) {
             return GTValues.VN[normalized];
         }
-        return "LV";
+        return "ULV";
     }
 
     private static void loadState() {
@@ -146,7 +146,7 @@ public class CEIVoltageRecipeFilter {
                 maxTier = clampTier(state.get("maxTier").getAsInt());
             }
             if (minTier > maxTier) {
-                minTier = GTValues.LV;
+                minTier = GTValues.ULV;
                 maxTier = GTValues.MAX;
             }
         } catch (RuntimeException | IOException e) {

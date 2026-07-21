@@ -1,6 +1,5 @@
 package com.ctnh.cei.utils.emi.collapsible;
 
-import it.unimi.dsi.fastutil.objects.Object2ObjectAVLTreeMap;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
@@ -12,14 +11,15 @@ import net.minecraft.world.level.block.Block;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import com.ctnh.cei.CreateEnoughItems;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.ctnh.cei.CreateEnoughItems;
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
+import it.unimi.dsi.fastutil.objects.Object2ObjectAVLTreeMap;
 import org.jetbrains.annotations.Nullable;
 import tech.vixhentx.mcmod.ctnhlib.utils.ChunkList;
 import tech.vixhentx.mcmod.ctnhlib.utils.LockIdentityHashMap;
@@ -144,9 +144,9 @@ public class CEICollapsibleGroups {
             GROUPS.clear();
             STACK_TO_GROUP.clear();
             ICON_BUF_LOCK.writeLock().lock();
-            try{
+            try {
                 ICON_BUF.clear();
-            }finally {
+            } finally {
                 ICON_BUF_LOCK.writeLock().unlock();
             }
             ICON_NOT.clear();
@@ -200,7 +200,6 @@ public class CEICollapsibleGroups {
 
     /** 在修改表找他下（{@link CEICollapsibleGroups。reloadState)）复用老結果可以解决完全释放cpu内存问题 */
     public static void projectReload(List<? extends EmiIngredient> source, ProjectResult result) {
-
         if (dirty || GROUPS.isEmpty()) {
             result.list = source;
             result.groupBuf = null;
@@ -225,7 +224,7 @@ public class CEICollapsibleGroups {
                             buf.expanded = !buf.expanded;
                             if (buf.expanded) {
                                 // 折叠→展开：先移除代表项，再添加所有成员，并清除代表项映射
-                                EmiIngredient representative = (EmiIngredient)cl.get(pos);
+                                EmiIngredient representative = (EmiIngredient) cl.get(pos);
                                 cl.removeRange(pos, pos + 1);
                                 cl.addAll(pos, buf.members);
                                 REPRESENTATIVE_TO_GROUP.remove(representative);
@@ -243,17 +242,18 @@ public class CEICollapsibleGroups {
                             }
                         }
                     }
-                    if (buf.expanded) pos += buf.size; else pos += 1;
+                    if (buf.expanded) pos += buf.size;
+                    else pos += 1;
                     buf = buf.next;
                 }
-            }else{
+            } else {
                 var pr = project(source);
                 result.list = pr.list;
                 result.groupBuf = pr.groupBuf;
             }
         }
-
     }
+
     /** 把 EMI 当前列表转换为实际显示列表：展开组显示成员，折叠组按当前搜索结果折叠。同时构建 GroupBuf 链表记录折叠组位置信息。 */
     public static ProjectResult project(List<? extends EmiIngredient> source) {
         if (dirty || GROUPS.isEmpty()) {
@@ -262,7 +262,7 @@ public class CEICollapsibleGroups {
         synchronized (GROUPS) {
             List<EmiIngredient> result = new ChunkList<>(source.size());
             Set<String> projectedGroups = new HashSet<>(source.size());
-            if (!ICON_NOT.isEmpty())visibleMembersByGroup(source);
+            if (!ICON_NOT.isEmpty()) visibleMembersByGroup(source);
             Set<EmiIngredient> sourceStacks = Collections.newSetFromMap(new IdentityHashMap<>());
             sourceStacks.addAll(source);
             REPRESENTATIVE_TO_GROUP.clear();
@@ -295,7 +295,8 @@ public class CEICollapsibleGroups {
                 } else if (group.isExpanded()) {
                     if (projectedGroups.add(guid)) {
                         int groupPos = resultIndex;
-                        int offset = head == null ? groupPos : groupPos - (prevExpanded ? prevGroupPos + prevSize : prevGroupPos + 1);
+                        int offset = head == null ? groupPos :
+                                groupPos - (prevExpanded ? prevGroupPos + prevSize : prevGroupPos + 1);
 
                         List<EmiIngredient> visibleMembers = new ArrayList<>(group.members.size());
                         for (EmiIngredient member : group.members) {
@@ -323,7 +324,8 @@ public class CEICollapsibleGroups {
                 } else {
                     if (projectedGroups.add(guid)) {
                         int groupPos = resultIndex;
-                        int offset = head == null ? groupPos : groupPos - (prevExpanded ? prevGroupPos + prevSize : prevGroupPos + 1);
+                        int offset = head == null ? groupPos :
+                                groupPos - (prevExpanded ? prevGroupPos + prevSize : prevGroupPos + 1);
 
                         EmiIngredient visible = ICON_BUF.get(guid);
                         if (visible != null) {
@@ -362,7 +364,7 @@ public class CEICollapsibleGroups {
 
     private synchronized static void visibleMembersByGroup(List<? extends EmiIngredient> source) {
         ICON_BUF_LOCK.readLock().lock();
-        try{
+        try {
             int size = ICON_NOT.size();
             Set<String> contains = new HashSet<>();
             for (EmiIngredient stack : source) {
@@ -379,7 +381,7 @@ public class CEICollapsibleGroups {
                     }
                 }
             }
-        }finally {
+        } finally {
             ICON_BUF_LOCK.readLock().unlock();
         }
     }
@@ -407,7 +409,7 @@ public class CEICollapsibleGroups {
     private static void toggleGroup(String guid) {
         CollapsibleGroup group = GROUPS.get(guid);
         if (group != null) {
-            synchronized (toggles){
+            synchronized (toggles) {
                 toggles.add(guid);
             }
             group.setExpanded(!group.isExpanded());
@@ -860,33 +862,31 @@ public class CEICollapsibleGroups {
         }
     }
 
-    public static final class GroupBuf{
+    public static final class GroupBuf {
 
-        public boolean expanded;//展开
-        public int offset, size;//偏移量是这个到写一个折叠位置有多大距离，size是当前有多少个EmiIngredient可折叠
+        public boolean expanded;// 展开
+        public int offset, size;// 偏移量是这个到写一个折叠位置有多大距离，size是当前有多少个EmiIngredient可折叠
         public List<EmiIngredient> members;
         public String key;
         public GroupBuf next;
 
-        public int pos(String key){
+        public int pos(String key) {
             int pos = 0;
             GroupBuf buf = this;
             while (buf != null) {
                 pos += buf.offset;
                 if (Objects.equals(buf.key, key)) return pos;
-                if (buf.expanded) pos += buf.size; else pos += 1;
+                if (buf.expanded) pos += buf.size;
+                else pos += 1;
                 buf = buf.next;
             }
             return -1;
         }
-
-
-
-
     }
 
     /** project 方法的输出格式，同时包含投影列表和折叠组位置链表。 */
     public static final class ProjectResult {
+
         public List<? extends EmiIngredient> list;
         @Nullable
         public GroupBuf groupBuf;

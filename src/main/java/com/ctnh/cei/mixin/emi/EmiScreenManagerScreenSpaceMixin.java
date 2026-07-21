@@ -84,7 +84,7 @@ public abstract class EmiScreenManagerScreenSpaceMixin {
     private static final int COLLAPSED_FRONT_Y_OFFSET = 2;
     @Unique
     private static final Object NULLOBJ = new Object();
-    
+
     @Unique
     private volatile Object OldStacks = NULLOBJ;
     @Unique
@@ -105,9 +105,9 @@ public abstract class EmiScreenManagerScreenSpaceMixin {
                     var i = CEICollapsibleGroups.reloadState.get();
                     if (OldStacks != original || i > 0 || i == -1) {
                         CEICollapsibleGroups.reloadState.set(0);
-                        if (i > 0 && OldStacks == original){
+                        if (i > 0 && OldStacks == original) {
                             CEICollapsibleGroups.projectReload(original, projectGetStacksBuf);
-                        }else{
+                        } else {
                             OldStacks = original;
                             projectGetStacksBuf = CEICollapsibleGroups.project(original);
                         }
