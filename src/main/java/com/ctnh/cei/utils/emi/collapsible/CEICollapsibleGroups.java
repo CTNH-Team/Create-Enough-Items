@@ -8,6 +8,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.registries.ForgeRegistries;
 
@@ -647,6 +648,11 @@ public class CEICollapsibleGroups {
         if (token.startsWith("r/") && token.endsWith("/") && token.length() > 3) {
             return new RegexRule(Pattern.compile(token.substring(2, token.length() - 1)));
         }
+        if (token.startsWith("fluid:")) {
+            ResourceLocation fluidId = ResourceLocation.tryParse(token.substring("fluid:".length()));
+            if (fluidId == null) throw new IllegalArgumentException("Invalid fluid id " + token);
+            return new FluidIdRule(fluidId);
+        }
         if (token.matches("\\d+(?:-\\d+)?")) {
             return parseDamageRule(token);
         }
@@ -766,6 +772,9 @@ public class CEICollapsibleGroups {
                 if (!itemStack.isEmpty() && matchesItem(itemStack)) {
                     return true;
                 }
+                if (itemStack.isEmpty() && matchesFluid(stack)) {
+                    return true;
+                }
             }
             return false;
         }
@@ -776,12 +785,31 @@ public class CEICollapsibleGroups {
             }
             return false;
         }
+
+        private boolean matchesFluid(EmiStack stack) {
+            if (!(stack.getKey() instanceof Fluid fluid)) {
+                return false;
+            }
+            ResourceLocation fluidId = ForgeRegistries.FLUIDS.getKey(fluid);
+            if (fluidId == null) {
+                return false;
+            }
+            for (GroupRule rule : rules) {
+                if (rule.matchesFluid(fluidId)) return true;
+            }
+            return false;
+        }
     }
 
     /** 单条分组规则。 */
     private interface GroupRule {
 
         boolean matches(ItemStack stack);
+
+        /** 流体 EmiStack 匹配，默认不匹配。 */
+        default boolean matchesFluid(ResourceLocation fluidId) {
+            return false;
+        }
     }
 
     private record AnyRule(List<GroupRule> rules) implements GroupRule {
@@ -849,6 +877,20 @@ public class CEICollapsibleGroups {
 
             Item item = ForgeRegistries.ITEMS.getValue(id);
             return item == null || item == Items.AIR ? stackId.getPath().startsWith(id.getPath()) : false;
+        }
+    }
+
+    /** 流体注册 id 规则。 */
+    private record FluidIdRule(ResourceLocation id) implements GroupRule {
+
+        @Override
+        public boolean matches(ItemStack stack) {
+            return false;
+        }
+
+        @Override
+        public boolean matchesFluid(ResourceLocation fluidId) {
+            return Objects.equals(fluidId, id);
         }
     }
 
