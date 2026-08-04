@@ -408,5 +408,31 @@
   "cei:items/tconstruct_parts/tough_binding": { "key": "tconstruct:tough_binding" },
   "cei:items/tconstruct_parts/tough_handle": { "key": "tconstruct:tough_handle" },
   "cei:items/tconstruct_parts/wire_cutter_head": { "key": "tconstruct:wire_cutter_head" },
-  "cei:items/tconstruct_parts/wrench_head": { "key": "tconstruct:wrench_head" }
+  "cei:items/tconstruct_parts/wrench_head": { "key": "tconstruct:wrench_head" },
+  "cei:items/ae2_facades": {
+    "key": "ae2:facade"
+  },
+  "cei:items/ae2_paint_balls": {
+    "key": "regex:ae2:(white|orange|magenta|light_blue|yellow|lime|pink|gray|light_gray|cyan|purple|blue|brown|green|red|black)_paint_ball"
+  },
+  "cei:items/bloodmagic_upgrade_tomes": {
+    "key": "bloodmagic:upgradetome"
+  },
+  "cei:blocks/enderio_clear_glass": {
+    "key": "regex:enderio:clear_glass(_[a-z]+)?(_[a-z]+)?(_[a-z]+)?",
+    "priority": 1
+  },
+  "cei:blocks/enderio_fused_quartz": {
+    "key": "regex:enderio:fused_quartz(_[a-z]+)?(_[a-z]+)?(_[a-z]+)?",
+    "priority": 1
+  },
+  "cei:items/enderio_soul_vials": {
+    "key": [
+      "enderio:empty_soul_vial",
+      "enderio:filled_soul_vial"
+    ]
+  },
+  "cei:items/enderio_broken_spawners": {
+    "key": "enderio:broken_spawner"
+  }
 }
