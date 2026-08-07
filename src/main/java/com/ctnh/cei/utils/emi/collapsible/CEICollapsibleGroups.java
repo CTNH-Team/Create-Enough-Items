@@ -157,7 +157,6 @@ public class CEICollapsibleGroups {
                 return;
             }
 
-            loadRules();
             registerConfiguredGroups(stacks);
             dirty = false;
         }
@@ -452,7 +451,7 @@ public class CEICollapsibleGroups {
     }
 
     /** 从 assets JSON 读取并编译分组规则。 */
-    private static void loadRules() {
+    public static void loadRules() {
         if (rulesLoaded) return;
         rulesLoaded = true;
 
