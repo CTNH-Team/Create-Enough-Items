@@ -3,6 +3,8 @@ package com.ctnh.cei.mixin.emi;
 import com.gregtechceu.gtceu.common.data.GTItems;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
@@ -12,20 +14,22 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Share;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
+import dev.emi.emi.api.EmiApi;
+import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.stack.FluidEmiStack;
+import dev.emi.emi.network.CreateItemC2SPacket;
+import dev.emi.emi.network.EmiNetwork;
 import dev.emi.emi.screen.EmiScreenManager;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(value = EmiScreenManager.class, remap = false)
 public abstract class EmiScreenManagerMixin {
-
-    @Shadow
-    private static Minecraft client;
 
     @Redirect(method = "give",
               at = @At(value = "INVOKE",
@@ -36,25 +40,6 @@ public abstract class EmiScreenManagerMixin {
         ItemStack realStack = ItemStack.EMPTY;
         if (stack.getItemStack().isEmpty() && stack instanceof FluidEmiStack fluidEmiStack) {
             if (fluidEmiStack.getKey() instanceof Fluid fluid) {
-                // if(client.player != null){
-                // ItemStack cursor = client.player.containerMenu.getCarried().copy();
-                // cursor.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).ifPresent(p -> {
-                // p.fill(new FluidStack(fluid, Integer.MAX_VALUE), IFluidHandler.FluidAction.EXECUTE);
-                // realStackRef.set(cursor);
-                // });
-                // if(realStackRef.get() != null) return realStackRef.get();
-                // }
-
-                // if(fluid.getBucket() != Items.AIR){
-                // realStack = new ItemStack(fluid.getBucket());
-                // }
-                // else {
-                // var container = GTItems.FLUID_CELL.asStack();
-                // container.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).ifPresent(
-                // p -> p.fill(new FluidStack(fluid, 1000), IFluidHandler.FluidAction.EXECUTE)
-                // );
-                // realStack = container;
-                // }
                 var container = GTItems.FLUID_CELL.asStack();
                 container.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).ifPresent(
                         p -> p.fill(new FluidStack(fluid, 1000, fluidEmiStack.getNbt()),
@@ -68,27 +53,42 @@ public abstract class EmiScreenManagerMixin {
         return realStack;
     }
 
-    // @Inject(method = "deleteCursor", at = @At(value = "INVOKE", target =
-    // "Ldev/emi/emi/screen/EmiScreenManager;getHoveredSpace(II)Ldev/emi/emi/screen/EmiScreenManager$ScreenSpace;"),
-    // cancellable = true)
-    // private static void fillContainer(int mx, int my,
-    // CallbackInfoReturnable<Boolean> cir,
-    // @Local(name = "cursor") ItemStack cursor,
-    // @Local(name = "handled") AbstractContainerScreen<?> handled
-    // ){
-    // var stacks = EmiScreenManager.getHoveredStack(mx, my, true).getStack().getEmiStacks();
-    // if(stacks.size() == 1 && stacks.get(0) instanceof FluidEmiStack fluidEmiStack){
-    // cursor.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).ifPresent(
-    // c -> {
-    // c.fill(new FluidStack((Fluid) fluidEmiStack.getKey(), Integer.MAX_VALUE), IFluidHandler.FluidAction.EXECUTE);
-    // handled.getMenu().setCarried(cursor);
-    // EmiNetwork.sendToServer(new CreateItemC2SPacket(1, cursor));
-    // cir.setReturnValue(true);
-    // }
-    // );
-    // }
-    //
-    // }
+    @Inject(method = "mouseReleased",
+            at = @At(value = "INVOKE",
+                     target = "Ldev/emi/emi/screen/EmiScreenManager;deleteCursor(II)Z"),
+            cancellable = true)
+    private static void fillCursorContainerFromFluidStack(double mouseX, double mouseY, int button,
+                                                          CallbackInfoReturnable<Boolean> cir) {
+        AbstractContainerScreen<?> handled = EmiApi.getHandledScreen();
+        if (handled == null) return;
+
+        ItemStack cursor = handled.getMenu().getCarried();
+        if (cursor.isEmpty() || cursor.getCount() != 1) return;
+
+        EmiIngredient ingredient = EmiScreenManager.getHoveredStack((int) mouseX, (int) mouseY, false).getStack();
+        if (ingredient.getEmiStacks().size() != 1 ||
+                !(ingredient.getEmiStacks().get(0) instanceof FluidEmiStack fluidStack) ||
+                !(fluidStack.getKey() instanceof Fluid fluid)) {
+            return;
+        }
+
+        ItemStack filledContainer = cursor.copy();
+        var capability = filledContainer.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM);
+        if (!capability.isPresent()) return;
+
+        capability.ifPresent(handler -> {
+            if (handler.fill(new FluidStack(fluid, Integer.MAX_VALUE, fluidStack.getNbt()),
+                    IFluidHandler.FluidAction.EXECUTE) > 0) {
+                ItemStack result = handler.getContainer();
+                handled.getMenu().setCarried(result);
+                if (!(handled instanceof CreativeModeInventoryScreen) ||
+                        !Minecraft.getInstance().player.getAbilities().instabuild) {
+                    EmiNetwork.sendToServer(new CreateItemC2SPacket(1, result));
+                }
+            }
+        });
+        cir.setReturnValue(true);
+    }
 
     @ModifyExpressionValue(method = "addWidgets",
                            at = @At(value = "FIELD",
