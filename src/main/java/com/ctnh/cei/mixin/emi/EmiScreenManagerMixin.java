@@ -9,11 +9,13 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Share;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.stack.FluidEmiStack;
 import dev.emi.emi.screen.EmiScreenManager;
+import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -87,4 +89,12 @@ public abstract class EmiScreenManagerMixin {
     // }
     //
     // }
+
+    @ModifyExpressionValue(method = "addWidgets",
+                           at = @At(value = "FIELD",
+                                    target = "Ldev/emi/emi/config/EmiConfig;centerSearchBar:Z",
+                                    opcode = Opcodes.GETSTATIC))
+    private static boolean disableCenterSearchBar(boolean original) {
+        return false;
+    }
 }
