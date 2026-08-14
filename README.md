@@ -19,7 +19,7 @@ Create Enough Items（CEI）是为整合包 [Create: New Horizon（CTNH）](http
 
 CEI 会根据内置规则把 EMI INDEX 侧栏中的同类物品折叠为分组，例如工具、原木、木板、羊毛、药水、唱片、矿石、Sophisticated Storage 容器等。
 
-- 搜索框右侧会显示 `G` 按钮。
+- 搜索框左侧会显示 `G` 按钮。
 - 左键 `G`：智能展开/折叠全部分组。
 - 右键 `G`：折叠全部分组。
 - `Alt + 左键` 点击侧栏中的分组代表项或成员：切换单个分组。

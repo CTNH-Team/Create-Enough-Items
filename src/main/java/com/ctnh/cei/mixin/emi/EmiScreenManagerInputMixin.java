@@ -1,11 +1,14 @@
 package com.ctnh.cei.mixin.emi;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.network.chat.Component;
 
 import com.ctnh.cei.utils.emi.collapsible.CEICollapsibleGroups;
+import com.ctnh.cei.utils.emi.collapsible.CEICollapsibleGroups.CollapsibleGroup;
 import com.ctnh.cei.utils.emi.duplicate.CEIDuplicateRecipeScreen;
 import com.ctnh.cei.utils.emi.duplicate.CEIDuplicateRecipes;
 import com.ctnh.cei.utils.emi.featured.CEIFeaturedRecipeScreen;
@@ -15,6 +18,7 @@ import com.ctnh.cei.utils.emi.search.CEIAssociatedSearchRecipeScreen;
 import com.ctnh.cei.utils.emi.search.CEIEmiDragSearchFill;
 import com.ctnh.cei.utils.emi.voltage.CEIVoltageRecipeFilter;
 import com.ctnh.cei.utils.emi.voltage.CEIVoltageRecipeScreen;
+import dev.emi.emi.api.render.EmiTooltipComponents;
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.stack.EmiStackInteraction;
@@ -29,9 +33,11 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -40,7 +46,7 @@ import java.util.List;
 @Mixin(value = EmiScreenManager.class, remap = false)
 public class EmiScreenManagerInputMixin {
 
-    /** EMI 原生搜索框实例，用于把 G 按钮定位到搜索框右侧。 */
+    /** EMI 原生搜索框实例，用于把 G 按钮定位到搜索框左侧。 */
     @Shadow
     public static EmiSearchWidget search;
 
@@ -87,6 +93,25 @@ public class EmiScreenManagerInputMixin {
 
     @Unique
     private static final int VOLTAGE_BUTTON_HEIGHT = 16;
+
+    /** 把折叠组的成员数量和 Alt+左键提示追加到原物品 tooltip 末尾，而不是额外弹一个框。 */
+    @Redirect(method = "renderCurrentTooltip",
+              at = @At(value = "INVOKE",
+                       target = "Ldev/emi/emi/api/stack/EmiIngredient;getTooltip()Ljava/util/List;"))
+    private static List<ClientTooltipComponent> cei$appendGroupToggleTooltip(EmiIngredient ingredient) {
+        List<ClientTooltipComponent> tooltip = ingredient.getTooltip();
+        CollapsibleGroup group = CEICollapsibleGroups.getGroup(ingredient);
+        if (tooltip != null && group != null) {
+            tooltip = new ArrayList<>(tooltip);
+            tooltip.add(EmiTooltipComponents.of(
+                    Component.translatable("cei.emi.collapsible.group.count", group.members.size())
+                            .withStyle(ChatFormatting.GRAY)));
+            tooltip.add(EmiTooltipComponents.of(
+                    Component.translatable("cei.emi.collapsible.group.toggle")
+                            .withStyle(ChatFormatting.GRAY)));
+        }
+        return tooltip;
+    }
 
     /** 把从 EMI 侧栏拖出的物品名填入落点处的搜索框。 */
     @Inject(method = "mouseReleased", at = @At("HEAD"), cancellable = true)
@@ -165,7 +190,7 @@ public class EmiScreenManagerInputMixin {
         }
     }
 
-    /** 在搜索框右侧绘制 G 按钮：左键智能切换，右键全部折叠。 */
+    /** 在搜索框左侧绘制 G 按钮：左键智能切换，右键全部折叠。 */
     @Inject(method = "renderWidgets", at = @At("TAIL"))
     private static void cei$renderToggleButton(EmiDrawContext context, int mouseX, int mouseY,
                                                float delta, EmiScreenBase base,
@@ -185,7 +210,7 @@ public class EmiScreenManagerInputMixin {
         }
 
         if (base == null || search == null) return;
-        cei$toggleBtnX = search.getX() + search.getWidth() + TOGGLE_BUTTON_GAP;
+        cei$toggleBtnX = search.getX() - TOGGLE_BUTTON_SIZE - TOGGLE_BUTTON_GAP;
         cei$toggleBtnY = search.getY();
 
         int x = cei$toggleBtnX;

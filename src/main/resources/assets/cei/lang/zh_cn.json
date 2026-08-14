@@ -2,6 +2,8 @@
   "cei.emi.collapsible.button.collapse_all": "左键：折叠全部（%s 个分组）",
   "cei.emi.collapsible.button.collapse_all.right_click": "右键：折叠全部",
   "cei.emi.collapsible.button.expand_all": "左键：展开全部（%s 个已折叠）",
+  "cei.emi.collapsible.group.count": "当前组含 %s 个项目",
+  "cei.emi.collapsible.group.toggle": "Alt + 左键展开/折叠",
   "cei.emi.recycling_recipes.button.visible": "回收配方",
   "cei.emi.recycling_recipes.button.hidden": "回收配方",
   "cei.emi.recycling_recipes.tooltip.visible": "当前显示回收配方，点击后隐藏回收配方",

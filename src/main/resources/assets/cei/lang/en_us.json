@@ -2,6 +2,8 @@
   "cei.emi.collapsible.button.collapse_all": "Left click: collapse all (%s groups)",
   "cei.emi.collapsible.button.collapse_all.right_click": "Right click: collapse all",
   "cei.emi.collapsible.button.expand_all": "Left click: expand all (%s collapsed)",
+  "cei.emi.collapsible.group.count": "This group contains %s items",
+  "cei.emi.collapsible.group.toggle": "Alt + Left Click to expand/collapse",
   "cei.emi.recycling_recipes.button.visible": "Recycle",
   "cei.emi.recycling_recipes.button.hidden": "Recycle",
   "cei.emi.recycling_recipes.tooltip.visible": "Recycling recipes are visible. Click to hide them",
