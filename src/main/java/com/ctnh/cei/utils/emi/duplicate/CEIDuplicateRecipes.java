@@ -35,13 +35,19 @@ public class CEIDuplicateRecipes {
             createId("automatic_packing"),
             createId("block_cutting"),
             createId("fan_smoking"),
-            createId("fan_blasting"));
+            createId("fan_blasting"),
+            // Create Vintage 振动台自动生成的“震动解包”配方，与机械动力的压缩配方重复
+            vintageImprovementsId("unpacking"));
 
     private static boolean hidden = false;
     private static boolean stateLoaded = false;
 
     private static ResourceLocation createId(String path) {
         return ResourceLocation.tryBuild("create", path);
+    }
+
+    private static ResourceLocation vintageImprovementsId(String path) {
+        return ResourceLocation.tryBuild("vintageimprovements", path);
     }
 
     public static boolean isHidden() {
