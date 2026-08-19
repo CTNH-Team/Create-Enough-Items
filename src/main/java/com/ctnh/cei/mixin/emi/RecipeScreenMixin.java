@@ -132,7 +132,7 @@ public abstract class RecipeScreenMixin extends Screen
 
     @Override
     public int cei$getVoltageMinButtonY() {
-        return Math.min(this.cei$getAssociatedSearchButtonY() + 18, this.height - 20);
+        return Math.min(this.cei$getAssociatedSearchButtonY() + 18, this.height - 38);
     }
 
     @Override
@@ -146,6 +146,16 @@ public abstract class RecipeScreenMixin extends Screen
     }
 
     @Override
+    public int cei$getVoltageResetButtonX() {
+        return this.x + Math.max(0, (this.backgroundWidth - 56) / 2);
+    }
+
+    @Override
+    public int cei$getVoltageResetButtonY() {
+        return this.cei$getVoltageMinButtonY() + 18;
+    }
+
+    @Override
     public void cei$adjustVoltageMinTier(int delta) {
         CEIVoltageRecipeFilter.adjustMinTier(delta);
         cei$refreshFilteredRecipes();
@@ -154,6 +164,12 @@ public abstract class RecipeScreenMixin extends Screen
     @Override
     public void cei$adjustVoltageMaxTier(int delta) {
         CEIVoltageRecipeFilter.adjustMaxTier(delta);
+        cei$refreshFilteredRecipes();
+    }
+
+    @Override
+    public void cei$resetVoltageFilter() {
+        CEIVoltageRecipeFilter.reset();
         cei$refreshFilteredRecipes();
     }
 

@@ -14,5 +14,7 @@
   "cei.emi.duplicate_recipes.tooltip.hidden": "Duplicate recipes are hidden. Click to show Create-derived recipes",
   "cei.emi.associated_search.button": "Related",
   "cei.emi.associated_search.tooltip.enabled": "Associated search is enabled. Click to show only the current stack's recipes",
-  "cei.emi.associated_search.tooltip.disabled": "Associated search is disabled. Click to include related item and fluid recipes"
+  "cei.emi.associated_search.tooltip.disabled": "Associated search is disabled. Click to include related item and fluid recipes",
+  "cei.emi.voltage_filter.reset.button": "Reset Filter",
+  "cei.emi.voltage_filter.reset.tooltip": "Reset voltage filter to ULV - MAX"
 }

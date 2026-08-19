@@ -94,6 +94,12 @@ public class EmiScreenManagerInputMixin {
     @Unique
     private static final int VOLTAGE_BUTTON_HEIGHT = 16;
 
+    @Unique
+    private static final int VOLTAGE_RESET_BUTTON_WIDTH = 56;
+
+    @Unique
+    private static final int VOLTAGE_RESET_BUTTON_HEIGHT = 16;
+
     /** 把折叠组的成员数量和 Alt+左键提示追加到原物品 tooltip 末尾，而不是额外弹一个框。 */
     @Redirect(method = "renderCurrentTooltip",
               at = @At(value = "INVOKE",
@@ -296,6 +302,10 @@ public class EmiScreenManagerInputMixin {
             voltageScreen.cei$adjustVoltageMaxTier(delta);
             return true;
         }
+        if (button == 0 && cei$isVoltageResetButtonHovered(voltageScreen, mouseX, mouseY)) {
+            voltageScreen.cei$resetVoltageFilter();
+            return true;
+        }
         return false;
     }
 
@@ -439,10 +449,41 @@ public class EmiScreenManagerInputMixin {
         cei$drawVoltageButton(graphics, minX, minY, CEIVoltageRecipeFilter.getMinTierName(), minHovered);
         cei$drawVoltageButton(graphics, maxX, maxY, CEIVoltageRecipeFilter.getMaxTierName(), maxHovered);
 
+        int resetX = voltageScreen.cei$getVoltageResetButtonX();
+        int resetY = voltageScreen.cei$getVoltageResetButtonY();
+        boolean resetHovered = cei$isVoltageResetButtonHovered(voltageScreen, mouseX, mouseY);
+        cei$drawVoltageResetButton(graphics, resetX, resetY, resetHovered, mouseX, mouseY);
+
         String arrow = "->";
         int arrowX = minX + VOLTAGE_BUTTON_WIDTH +
                 (maxX - minX - VOLTAGE_BUTTON_WIDTH - Minecraft.getInstance().font.width(arrow)) / 2;
         graphics.drawString(Minecraft.getInstance().font, arrow, arrowX, minY + 4, 0xFFE0E0E0, false);
+    }
+
+    @Unique
+    private static void cei$drawVoltageResetButton(GuiGraphics graphics, int x, int y, boolean hovered,
+                                                   int mouseX, int mouseY) {
+        String text = Component.translatable("cei.emi.voltage_filter.reset.button").getString();
+        int bgColor = hovered ? 0xFF444444 : 0xFF333333;
+        int borderColor = 0xFF55AAEE;
+        int textColor = 0xFFAAE0FF;
+
+        graphics.fill(x, y, x + VOLTAGE_RESET_BUTTON_WIDTH, y + VOLTAGE_RESET_BUTTON_HEIGHT, bgColor);
+        graphics.fill(x, y, x + VOLTAGE_RESET_BUTTON_WIDTH, y + 1, borderColor);
+        graphics.fill(x, y + VOLTAGE_RESET_BUTTON_HEIGHT - 1, x + VOLTAGE_RESET_BUTTON_WIDTH,
+                y + VOLTAGE_RESET_BUTTON_HEIGHT, borderColor);
+        graphics.fill(x, y, x + 1, y + VOLTAGE_RESET_BUTTON_HEIGHT, borderColor);
+        graphics.fill(x + VOLTAGE_RESET_BUTTON_WIDTH - 1, y, x + VOLTAGE_RESET_BUTTON_WIDTH,
+                y + VOLTAGE_RESET_BUTTON_HEIGHT, borderColor);
+
+        int textX = x + (VOLTAGE_RESET_BUTTON_WIDTH - Minecraft.getInstance().font.width(text)) / 2;
+        graphics.drawString(Minecraft.getInstance().font, text, textX, y + 4, textColor, false);
+
+        if (hovered) {
+            graphics.renderComponentTooltip(Minecraft.getInstance().font,
+                    List.of(Component.translatable("cei.emi.voltage_filter.reset.tooltip")),
+                    mouseX, mouseY);
+        }
     }
 
     @Unique
@@ -503,6 +544,14 @@ public class EmiScreenManagerInputMixin {
         int y = screen.cei$getVoltageMaxButtonY();
         return mouseX >= x && mouseX < x + VOLTAGE_BUTTON_WIDTH &&
                 mouseY >= y && mouseY < y + VOLTAGE_BUTTON_HEIGHT;
+    }
+
+    @Unique
+    private static boolean cei$isVoltageResetButtonHovered(CEIVoltageRecipeScreen screen, int mouseX, int mouseY) {
+        int x = screen.cei$getVoltageResetButtonX();
+        int y = screen.cei$getVoltageResetButtonY();
+        return mouseX >= x && mouseX < x + VOLTAGE_RESET_BUTTON_WIDTH &&
+                mouseY >= y && mouseY < y + VOLTAGE_RESET_BUTTON_HEIGHT;
     }
 
     /** EMI 刷新搜索来源时，用 INDEX 完整列表重建分组。 */

@@ -79,6 +79,13 @@ public class CEIVoltageRecipeFilter {
         setMaxTier(cycleTier(getMaxTier(), delta));
     }
 
+    public static void reset() {
+        loadState();
+        minTier = GTValues.ULV;
+        maxTier = GTValues.MAX;
+        saveState();
+    }
+
     public static Map<EmiRecipeCategory, List<EmiRecipe>> apply(Map<EmiRecipeCategory, List<EmiRecipe>> recipes) {
         if (recipes == null || recipes.isEmpty()) return recipes;
         loadState();

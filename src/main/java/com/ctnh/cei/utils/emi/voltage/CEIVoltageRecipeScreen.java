@@ -11,7 +11,13 @@ public interface CEIVoltageRecipeScreen {
 
     int cei$getVoltageMaxButtonY();
 
+    int cei$getVoltageResetButtonX();
+
+    int cei$getVoltageResetButtonY();
+
     void cei$adjustVoltageMinTier(int delta);
 
     void cei$adjustVoltageMaxTier(int delta);
+
+    void cei$resetVoltageFilter();
 }
