@@ -40,13 +40,16 @@ public abstract class RecipeScreenMixin extends Screen
     private List<RecipeTab> tabs;
 
     @Shadow
-    private int tabPage;
+    private int tabPageSize;
 
     @Shadow
     private int tab;
 
     @Shadow
     private int page;
+
+    @Shadow
+    public abstract void setPage(int tabPage, int tab, int page);
 
     @Shadow
     int backgroundWidth;
@@ -181,13 +184,46 @@ public abstract class RecipeScreenMixin extends Screen
 
     @Unique
     private void cei$refreshFilteredRecipes() {
+        EmiRecipeCategory focusedCategory = cei$getFocusedCategory();
+        int focusedPage = this.page;
+
         if (this.cei$allRecipes == null) {
             this.cei$allRecipes = CEIFeaturedRecipes.copyOf(this.recipes);
         }
         this.recipes = cei$applyRecipeFilters(this.cei$allRecipes);
-        this.tabPage = 0;
-        this.tab = 0;
-        this.page = 0;
         Minecraft.getInstance().setScreen(this);
+        cei$restoreFocusedPage(focusedCategory, focusedPage);
+    }
+
+    @Unique
+    private EmiRecipeCategory cei$getFocusedCategory() {
+        if (this.tabs == null || this.tab < 0 || this.tab >= this.tabs.size()) {
+            return null;
+        }
+        return this.tabs.get(this.tab).category;
+    }
+
+    @Unique
+    private void cei$restoreFocusedPage(EmiRecipeCategory focusedCategory, int focusedPage) {
+        if (focusedCategory == null || this.tabs == null || this.tabs.isEmpty()) {
+            return;
+        }
+
+        for (int i = 0; i < this.tabs.size(); i++) {
+            RecipeTab recipeTab = this.tabs.get(i);
+            if (recipeTab.category != focusedCategory) {
+                continue;
+            }
+
+            int pageCount = recipeTab.getPageCount();
+            if (pageCount <= 0) {
+                return;
+            }
+
+            int restoredPage = Math.max(0, Math.min(focusedPage, pageCount - 1));
+            int restoredTabPage = i / Math.max(1, this.tabPageSize);
+            this.setPage(restoredTabPage, i, restoredPage);
+            return;
+        }
     }
 }
