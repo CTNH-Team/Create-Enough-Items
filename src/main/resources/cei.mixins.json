@@ -3,8 +3,10 @@
   "package": "com.ctnh.cei.mixin",
   "compatibilityLevel": "JAVA_17",
   "refmap": "mixins.cei.refmap.json",
+  "plugin": "com.ctnh.cei.MixinConnector",
   "mixins": [
     "accessor.EditBoxAccessor",
+    "accessor.EmiReloadManagerAccessor",
     "create.CreateJEIMixin",
     "create.CreateJEIMixin$CategoryBuilderMixin",
     "emi.EmiScreenManagerMixin",

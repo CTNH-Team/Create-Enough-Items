@@ -1,3 +1,11 @@
 dependencies {
     modImplementation(project(":modules:CTNH-Lib")){transitive = false}
 }
+
+//jar {
+//    manifest {
+//        attributes([
+//                'MixinConnector': 'com.ctnh.cei.MixinConnector'
+//        ])
+//    }
+//}
