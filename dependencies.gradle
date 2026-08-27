@@ -1,5 +1,11 @@
 dependencies {
     modImplementation(project(":modules:CTNH-Lib")){transitive = false}
+
+    modImplementation(ctnh.emi){
+        accessTransformers.configure(it) {
+            config = project.file('src/main/resources/META-INF/accesstransformer.cfg')
+        }
+    }
 }
 
 //jar {

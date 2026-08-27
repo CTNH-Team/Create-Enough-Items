@@ -1,6 +1,7 @@
 package com.ctnh.cei.falseMixin;
 
-import com.ctnh.cei.mixin.accessor.EmiReloadManagerAccessor;
+import net.minecraft.client.Minecraft;
+
 import com.google.common.collect.Lists;
 import dev.emi.emi.EmiPort;
 import dev.emi.emi.api.EmiInitRegistry;
@@ -14,7 +15,6 @@ import dev.emi.emi.runtime.*;
 import dev.emi.emi.screen.EmiScreenBase;
 import dev.emi.emi.screen.EmiScreenManager;
 import dev.emi.emi.search.EmiSearch;
-import net.minecraft.client.Minecraft;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
@@ -26,10 +26,16 @@ import java.util.function.Consumer;
 
 @Mixin(targets = "dev.emi.emi.runtime.EmiReloadManager$ReloadWorker", remap = false)
 public abstract class PreReloadWorkerMixin {
-    @Shadow(remap = false) protected static int entrypointPriority(EmiPluginContainer container){return 0;};
 
-    @Shadow(remap = false) protected abstract int lambda$run$0(EmiPluginContainer par1, EmiPluginContainer par2);
+    @Shadow
+    private static int lambda$run$0(EmiPluginContainer par1, EmiPluginContainer par2) {
+        throw new UnsupportedOperationException("Implemented via mixin");
+    }
 
+    /**
+     * @author n1
+     * @reason 我怎么知道
+     */
     @Overwrite(remap = false)
     public void run() {
         int retries = 3;
@@ -37,12 +43,12 @@ public abstract class PreReloadWorkerMixin {
         label121:
         do {
             try {
-                if (!EmiReloadManagerAccessor.clear()) {
+                if (!EmiReloadManager.clear) {
                     EmiLog.info("Starting EMI reload..._");
                 }
 
                 long reloadStart = System.currentTimeMillis();
-                EmiReloadManagerAccessor.restart(false);
+                EmiReloadManager.restart = false;
                 EmiReloadManager.step(EmiPort.literal("Clearing data"));
                 EmiRecipes.clear();
                 EmiStackList.clear();
@@ -55,8 +61,8 @@ public abstract class PreReloadWorkerMixin {
                 EmiTags.ADAPTERS_BY_CLASS.map().clear();
                 EmiTags.ADAPTERS_BY_REGISTRY.clear();
                 EmiScreenBase.clearScreenBoundsProviders();
-                if (EmiReloadManagerAccessor.clear()) {
-                    EmiReloadManagerAccessor.clear(false);
+                if (EmiReloadManager.clear) {
+                    EmiReloadManager.clear = false;
                 } else {
                     Minecraft client = Minecraft.getInstance();
                     if (client.level == null) {
@@ -70,14 +76,14 @@ public abstract class PreReloadWorkerMixin {
                     }
 
                     List<EmiPluginContainer> plugins = Lists.newArrayList();
-                    plugins.addAll(EmiAgnos.getPlugins().stream().sorted(this::lambda$run$0).toList());
+                    plugins.addAll(EmiAgnos.getPlugins().stream().sorted(PreReloadWorkerMixin::lambda$run$0).toList());
                     if (EmiAgnos.isModLoaded("jei")) {
                         plugins.add(new EmiPluginContainer(new JemiPlugin(), "jemi"));
                     }
 
                     EmiInitRegistry initRegistry = new EmiInitRegistryImpl();
 
-                    for(EmiPluginContainer container : plugins) {
+                    for (EmiPluginContainer container : plugins) {
                         EmiReloadManager.step(EmiPort.literal("Initializing plugin from " + container.id()), 5000L);
                         long start = System.currentTimeMillis();
 
@@ -85,14 +91,14 @@ public abstract class PreReloadWorkerMixin {
                             container.plugin().initialize(initRegistry);
                         } catch (Throwable e) {
                             EmiReloadLog.warn("Exception initializing plugin provided by " + container.id(), e);
-                            if (EmiReloadManagerAccessor.restart()) {
+                            if (EmiReloadManager.restart) {
                                 continue label121;
                             }
                             continue;
                         }
 
-                        String var23 = container.id();
-                        EmiLog.info("Initialized plugin from " + var23 + " in " + (System.currentTimeMillis() - start) + "ms");
+                        EmiLog.info("Initialized plugin from " + container.id() + " in " +
+                                (System.currentTimeMillis() - start) + "ms");
                     }
 
                     EmiHidden.reload();
@@ -101,10 +107,10 @@ public abstract class PreReloadWorkerMixin {
                     EmiReloadManager.step(EmiPort.literal("Constructing index"));
                     EmiComparisonDefaults.comparisons = new HashMap();
                     EmiStackList.reload();
-                    if (!EmiReloadManagerAccessor.restart()) {
+                    if (!EmiReloadManager.restart) {
                         EmiRegistry registry = new EmiRegistryImpl();
 
-                        for(EmiPluginContainer container : plugins) {
+                        for (EmiPluginContainer container : plugins) {
                             EmiReloadManager.step(EmiPort.literal("Loading plugin from " + container.id()), 10000L);
                             long start = System.currentTimeMillis();
 
@@ -112,32 +118,32 @@ public abstract class PreReloadWorkerMixin {
                                 container.plugin().register(registry);
                             } catch (Throwable e) {
                                 EmiReloadLog.warn("Exception loading plugin provided by " + container.id(), e);
-                                if (EmiReloadManagerAccessor.restart()) {
+                                if (EmiReloadManager.restart) {
                                     continue label121;
                                 }
                                 continue;
                             }
 
-                            String var24 = container.id();
-                            EmiLog.info("Reloaded plugin from " + var24 + " in " + (System.currentTimeMillis() - start) + "ms");
-                            if (EmiReloadManagerAccessor.restart()) {
+                            EmiLog.info("Reloaded plugin from " + container.id() + " in " +
+                                    (System.currentTimeMillis() - start) + "ms");
+                            if (EmiReloadManager.restart) {
                                 continue label121;
                             }
                         }
 
-                        if (!EmiReloadManagerAccessor.restart()) {
+                        if (!EmiReloadManager.restart) {
                             EmiReloadManager.step(EmiPort.literal("Baking index"));
                             EmiStackList.bake();
                             EmiReloadManager.step(EmiPort.literal("Registering late recipes"), 10000L);
                             Objects.requireNonNull(registry);
                             Consumer<EmiRecipe> registerLateRecipe = registry::addRecipe;
 
-                            for(Consumer<Consumer<EmiRecipe>> consumer : EmiRecipes.lateRecipes) {
+                            for (Consumer<Consumer<EmiRecipe>> consumer : EmiRecipes.lateRecipes) {
                                 try {
                                     consumer.accept(registerLateRecipe);
                                 } catch (Exception e) {
                                     EmiReloadLog.warn("Exception loading late recipes for plugins:", e);
-                                    if (EmiReloadManagerAccessor.restart()) {
+                                    if (EmiReloadManager.restart) {
                                         continue label121;
                                     }
                                 }
@@ -154,19 +160,19 @@ public abstract class PreReloadWorkerMixin {
                             EmiScreenManager.forceRecalculate();
                             EmiReloadLog.bake();
                             EmiLog.info("Reloaded EMI in " + (System.currentTimeMillis() - reloadStart) + "ms");
-                            EmiReloadManagerAccessor.status(2);
+                            EmiReloadManager.status = 2;
                         }
                     }
                 }
             } catch (Throwable e) {
                 EmiReloadLog.warn("Critical error occured during reload:", e);
-                EmiReloadManagerAccessor.status(-1);
+                EmiReloadManager.status = -1;
                 if (retries-- > 0) {
-                    EmiReloadManagerAccessor.restart(true);
+                    EmiReloadManager.restart = true;
                 }
             }
-        } while(EmiReloadManagerAccessor.restart());
+        } while (EmiReloadManager.restart);
 
-        EmiReloadManagerAccessor.thread(null);
+        EmiReloadManager.thread = null;
     }
 }

@@ -6,7 +6,6 @@
   "plugin": "com.ctnh.cei.MixinConnector",
   "mixins": [
     "accessor.EditBoxAccessor",
-    "accessor.EmiReloadManagerAccessor",
     "create.CreateJEIMixin",
     "create.CreateJEIMixin$CategoryBuilderMixin",
     "emi.EmiScreenManagerMixin",
