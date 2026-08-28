@@ -1,5 +1,6 @@
 package com.ctnh.cei.falseMixin;
 
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 
 import com.google.common.collect.Lists;
@@ -18,10 +19,13 @@ import dev.emi.emi.search.EmiSearch;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
+import tech.vixhentx.mcmod.ctnhlib.utils.CalculateTask2;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ForkJoinPool;
 import java.util.function.Consumer;
 
 @Mixin(targets = "dev.emi.emi.runtime.EmiReloadManager$ReloadWorker", remap = false)
@@ -82,23 +86,35 @@ public abstract class PreReloadWorkerMixin {
                     }
 
                     EmiInitRegistry initRegistry = new EmiInitRegistryImpl();
+                    var nl = plugins.stream().map(EmiPluginContainer::id).toList();
 
-                    for (EmiPluginContainer container : plugins) {
-                        EmiReloadManager.step(EmiPort.literal("Initializing plugin from " + container.id()), 5000L);
-                        long start = System.currentTimeMillis();
-
+                    EmiReloadManager.step(EmiPort.literal("Initializing plugin from start"), 5000L);
+                    long start = System.currentTimeMillis();
+                    long[] time = new long[plugins.size()];
+                    new CalculateTask2(() -> "InitializingEMI", 0, plugins.size(), i -> {
+                        EmiPluginContainer container = plugins.get(i);
+                        if (EmiReloadManager.restart) {
+                            return;
+                        }
                         try {
                             container.plugin().initialize(initRegistry);
                         } catch (Throwable e) {
                             EmiReloadLog.warn("Exception initializing plugin provided by " + container.id(), e);
-                            if (EmiReloadManager.restart) {
-                                continue label121;
-                            }
-                            continue;
+                            return;
+                        } finally {
+                            time[i] = System.currentTimeMillis();
+                            EmiReloadManager.step(EmiPort.literal("Initializing plugin from end: " + container.id()),
+                                    5000L);
                         }
 
-                        EmiLog.info("Initialized plugin from " + container.id() + " in " +
-                                (System.currentTimeMillis() - start) + "ms");
+                    }).call((ForkJoinPool) Util.backgroundExecutor());
+
+                    EmiLog.info((System.currentTimeMillis() - start) + "ms, max: " +
+                            (Arrays.stream(time).max().orElse(start) - start) + "ms : " +
+                            (Arrays.stream(time).min().orElse(start) - start) +
+                            "ms in Initialized plugin from " + nl);
+                    if (EmiReloadManager.restart) {
+                        continue label121;
                     }
 
                     EmiHidden.reload();
@@ -109,28 +125,36 @@ public abstract class PreReloadWorkerMixin {
                     EmiStackList.reload();
                     if (!EmiReloadManager.restart) {
                         EmiRegistry registry = new EmiRegistryImpl();
-
-                        for (EmiPluginContainer container : plugins) {
-                            EmiReloadManager.step(EmiPort.literal("Loading plugin from " + container.id()), 10000L);
-                            long start = System.currentTimeMillis();
-
+                        EmiReloadManager.step(EmiPort.literal("Loading plugin from "), 10000L);
+                        start = System.currentTimeMillis();
+                        // for (EmiPluginContainer container : plugins) {
+                        new CalculateTask2(() -> "InitializingEMI", 0, plugins.size(), i -> {
+                            EmiPluginContainer container = plugins.get(i);
+                            if (EmiReloadManager.restart) {
+                                return;
+                            }
                             try {
                                 container.plugin().register(registry);
                             } catch (Throwable e) {
                                 EmiReloadLog.warn("Exception loading plugin provided by " + container.id(), e);
-                                if (EmiReloadManager.restart) {
-                                    continue label121;
-                                }
-                                continue;
+                                return;
+                            } finally {
+                                time[i] = System.currentTimeMillis();
+                                EmiReloadManager.step(EmiPort.literal("Loading plugin from end: " + container.id()),
+                                        5000L);
                             }
 
-                            EmiLog.info("Reloaded plugin from " + container.id() + " in " +
-                                    (System.currentTimeMillis() - start) + "ms");
-                            if (EmiReloadManager.restart) {
-                                continue label121;
-                            }
+                        }).call((ForkJoinPool) Util.backgroundExecutor());
+
+                        EmiLog.info((System.currentTimeMillis() - start) + "ms, max: " +
+                                (Arrays.stream(time).max().orElse(start) - start) + "ms, min: " +
+                                (Arrays.stream(time).min().orElse(0L) - start) +
+                                "ms in Registering plugin from " + nl);
+                        // }
+
+                        if (EmiReloadManager.restart) {
+                            continue label121;
                         }
-
                         if (!EmiReloadManager.restart) {
                             EmiReloadManager.step(EmiPort.literal("Baking index"));
                             EmiStackList.bake();

@@ -9,6 +9,8 @@
     "create.CreateJEIMixin",
     "create.CreateJEIMixin$CategoryBuilderMixin",
     "emi.EmiScreenManagerMixin",
+    "emi.EmiStackListMixin",
+    "emi.EmiStackProvidersMixin",
     "emi.EmiTagsMixin",
     "tmrv.RecipeManagerMixin"
   ],
