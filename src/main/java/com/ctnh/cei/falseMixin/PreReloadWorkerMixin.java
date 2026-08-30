@@ -92,6 +92,7 @@ public abstract class PreReloadWorkerMixin {
                     long start = System.currentTimeMillis();
                     long[] time = new long[plugins.size()];
                     new CalculateTask2(() -> "InitializingEMI", 0, plugins.size(), i -> {
+                        long start2 = System.currentTimeMillis();
                         EmiPluginContainer container = plugins.get(i);
                         if (EmiReloadManager.restart) {
                             return;
@@ -103,7 +104,8 @@ public abstract class PreReloadWorkerMixin {
                             return;
                         } finally {
                             time[i] = System.currentTimeMillis();
-                            EmiReloadManager.step(EmiPort.literal("Initializing plugin from end: " + container.id()),
+                            EmiReloadManager.step(EmiPort.literal("Initializing plugin from end: " + container.id() +
+                                    "time: " + (start2 - System.currentTimeMillis())),
                                     5000L);
                         }
 
@@ -129,6 +131,7 @@ public abstract class PreReloadWorkerMixin {
                         start = System.currentTimeMillis();
                         // for (EmiPluginContainer container : plugins) {
                         new CalculateTask2(() -> "InitializingEMI", 0, plugins.size(), i -> {
+                            long start2 = System.currentTimeMillis();
                             EmiPluginContainer container = plugins.get(i);
                             if (EmiReloadManager.restart) {
                                 return;
@@ -140,7 +143,8 @@ public abstract class PreReloadWorkerMixin {
                                 return;
                             } finally {
                                 time[i] = System.currentTimeMillis();
-                                EmiReloadManager.step(EmiPort.literal("Loading plugin from end: " + container.id()),
+                                EmiReloadManager.step(EmiPort.literal("Loading plugin from end: " + container.id() +
+                                        "time: " + (start2 - System.currentTimeMillis())),
                                         5000L);
                             }
 
