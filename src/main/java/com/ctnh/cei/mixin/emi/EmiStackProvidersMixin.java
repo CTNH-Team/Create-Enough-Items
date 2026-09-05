@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Mixin(value = EmiStackProviders.class)
+@Mixin(value = EmiStackProviders.class, remap = false)
 public class EmiStackProvidersMixin {
 
     @Redirect(method = "<clinit>",
