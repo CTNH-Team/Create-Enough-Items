@@ -105,7 +105,7 @@ public abstract class PreReloadWorkerMixin {
                         } finally {
                             time[i] = System.currentTimeMillis();
                             EmiReloadManager.step(EmiPort.literal("Initializing plugin from end: " + container.id() +
-                                    "time: " + (start2 - System.currentTimeMillis())),
+                                    " took " + (System.currentTimeMillis() - start2) + "ms"),
                                     5000L);
                         }
 
